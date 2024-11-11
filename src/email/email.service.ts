@@ -38,11 +38,11 @@ export class EmailService {
   }
   async sendEmail(dto: SendEmailDto) {
     const { recipients, subject } = dto;
+    console.log(dto);
     const html = dto.placeholderReplacements
       ? this.template(dto.html, dto.placeholderReplacements)
       : dto.html;
     const transport = this.emailTransport();
-
     const options: nodemailer.SendMailOptions = {
       //       from: from ?? {
       //         name: this.configService.get<string>('APP_NAME'),
@@ -53,7 +53,6 @@ export class EmailService {
       subject,
       html,
     };
-
     try {
       const result = await transport.sendMail(options);
       const reformatResult = {
@@ -66,15 +65,27 @@ export class EmailService {
         html,
       };
       const newEmail = new this.emailModel(reformatResult);
-      console.log('Email sent successfully', newEmail);
       return newEmail.save();
     } catch (error) {
       console.log('Error: ', error);
     }
   }
   // : Promise<SendEmail[]>
-  async getEmails() {
-    return this.emailModel.find().exec();
+  async getEmails(
+    sortBy: string = 'date',
+    sortOrder: string = 'newest',
+    filter: string = 'all',
+  ) {
+    const order = sortOrder === 'newest' ? -1 : 1;
+    console.log(order);
+    return this.emailModel.find().sort({ createdAt: order }).exec();
+  }
+  async deleteInboxes(ids: string[]) {
+    return this.emailModel.deleteMany({
+      _id: {
+        $in: ids,
+      },
+    });
   }
 }
 // async findAllEmails(): Promise<SendEmail[]> {
